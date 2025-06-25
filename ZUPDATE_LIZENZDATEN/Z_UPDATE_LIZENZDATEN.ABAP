@@ -8,7 +8,6 @@
 *& Kommentar  : Benutzer Lizenzdaten ändern
 *&
 *&
-*&
 *&---------------------------------------------------------------------*
 *& Änderungen: Hier Anpassungen folgendermaßen eingeben
 *&             #Ticketnr/Name/Datum - Kurzbeschreibung
