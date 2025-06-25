@@ -1,0 +1,385 @@
+*&---------------------------------------------------------------------*
+*& Include          ZUSER_NEU_TEST_F01
+*&---------------------------------------------------------------------*
+
+*&---------------------------------------------------------------------*
+*& Form shopuser
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM shopuser.
+
+  " Set user_initial_password
+  ls_user_password-bapipwd = 'Winkler123!'.
+
+  " Set user_adress data
+  ls_user_adress-firstname = lv_fname.
+  ls_user_adress-lastname = lv_lname.
+  ls_user_adress-e_mail =  lv_email.
+  ls_user_adress-title_p = lv_title.
+  "kostenstelle
+
+  " Set user_logondata data
+  ls_user_logondata-gltgv = sy-datum.
+  ls_user_logondata-class = 'SHOPUSER'.
+  ls_user_logondata-ustyp = 'A'.
+  ls_user_logondata-tzone = 'CET'.
+  ls_user_logondata-gltgb = '20501231'.
+
+
+
+  "Lizenztyp
+  ls_user_uclass-lic_type = '5 2'.
+
+  "Gruppen
+  ls_bapiagr = 'SHOPUSER'.
+  APPEND ls_bapiagr TO lt_user_groups.
+
+  " call BAPI User erstellen
+  CALL FUNCTION 'BAPI_USER_CREATE1'
+    EXPORTING
+      username  = lv_username
+      logondata = ls_user_logondata
+      password  = ls_user_password
+      address   = ls_user_adress
+      uclass    = ls_user_uclass
+    TABLES
+      groups    = lt_user_groups
+      return    = lt_return.
+
+*  target = lv_username.
+*  TRANSLATE target TO UPPER CASE.
+
+*  " Rollen/Gruppen des zweiten Benutzers auf den ersten Benutzer kopieren
+*  LOOP AT lt_old_activity_groups INTO ls_bapiagr.
+*    CLEAR ls_bapiagr-agr_name.
+*    ls_bapiagr-agr_name = ls_bapiagr-agr_name.
+*    APPEND ls_bapiagr TO lt_new_activity_groups.
+*  ENDLOOP.
+
+
+*  " Rollen/Gruppen dem ersten Benutzer zuweisen
+*  CALL FUNCTION 'BAPI_USER_ACTGROUPS_ASSIGN'
+*    EXPORTING
+*      username       = lv_username
+*    TABLES
+*      activitygroups = lt_new_activity_groups
+*      return         = lt_return.
+
+ENDFORM.
+
+*&---------------------------------------------------------------------*
+*& Form benutzername
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM benutzername .
+  lv_username = lv_lname.
+*Wenn der Name "ß" hat sollte auch nach "SS" gesucht werden
+  IF lv_lname CA 'ß'.
+    l_nname_ss = lv_lname.
+    REPLACE 'ß' IN l_nname_ss WITH 'ss'.
+  ELSE.
+    l_nname_ss = lv_lname.
+  ENDIF.
+* Umlaute: Ä, Ü, Ö und ß umsetzen
+  PERFORM  ohnesz USING lv_username CHANGING lv_username.
+  TRANSLATE lv_username TO UPPER CASE.
+  CONCATENATE '%' lv_username(10) '%' INTO lv_username.
+  SELECT usrnam deleted usradr FROM soud INTO CORRESPONDING FIELDS OF TABLE itab WHERE usrnam LIKE lv_username.
+  LOOP AT itab INTO str.
+    SELECT SINGLE addrnumber  persnumber FROM adcp
+    INTO (str-addrnumber, str-persnumber) WHERE so_key = str-usradr. "#EC CI_NOORDER
+    IF sy-subrc = 0.
+      MODIFY itab FROM str.
+    ENDIF.
+  ENDLOOP.
+  LOOP AT itab INTO str.
+    SELECT SINGLE name_first name_last FROM adrp
+    INTO (str-name_first, str-name_last) WHERE persnumber = str-persnumber. "#EC CI_NOORDER
+    IF sy-subrc = 0.
+      MODIFY itab FROM str.
+    ENDIF.
+  ENDLOOP.
+* Namen und Nachnamen vergleichen
+  LOOP AT itab INTO str WHERE name_last = lv_lname OR name_last = l_nname_ss.  "name_first = lv_fname AND
+    CLEAR lv_username.
+    IF  str-deleted = 'X' AND str-name_first = lv_fname .
+      str_bname-bname = str-usrnam.
+      APPEND str_bname TO itab_bname_del.
+      APPEND str_bname TO itab_bname.  " SAP-Username Darf nicht neu vergeben
+      CLEAR str_bname.
+    ELSEIF  str-deleted = 'X' AND str-name_first NE lv_fname .
+      str_bname-bname = str-usrnam.
+      APPEND str_bname TO itab_bname.
+      CLEAR str_bname.
+    ELSEIF str-deleted = ' '.   " AND str-name_first(1) = lv_fname(1).
+      str_bname-bname = str-usrnam.
+      APPEND str_bname TO itab_bname.
+      CLEAR str_bname.
+*    ELSEIF  str-deleted = 'X' AND str-name_first(2) = lv_fname(2) .
+*      str_bname-bname = str-usrnam.
+*      APPEND str_bname TO itab_bname.  " SAP-Username Darf nicht neu vergeben
+*      CLEAR str_bname.
+    ENDIF.
+  ENDLOOP.
+*  Es gibt im System keinen SAP-User mit dem vorgegeben Vor- und Nachnamen
+  IF sy-subrc NE 0.
+    CLEAR lv_username.
+* Umlaute: Ä, Ü, Ö und ß umsetzen
+    PERFORM  ohnesz USING lv_lname CHANGING l_nname.
+    lv_username = l_nname(10).
+    TRANSLATE lv_username TO UPPER CASE.
+  ELSE.    " Es gibt im System schon einen User dem vorgegeben Vor- und Nachnamen
+    CLEAR lv_username.
+* Umlaute: Ä, Ü, Ö und ß umsetzen
+    PERFORM  ohnesz USING lv_lname CHANGING l_nname.
+    lv_username = l_nname(10).
+    TRANSLATE lv_username TO UPPER CASE.
+    READ TABLE itab_bname INTO str_bname WITH KEY bname = lv_username.
+    IF sy-subrc NE 0.
+*     Der SAP-Username ist noch nicht vergeben
+    ELSE.
+      CLEAR lv_username.
+* Umlaute: Ä, Ü, Ö und ß umsetzen
+      PERFORM  ohnesz USING lv_lname CHANGING l_nname.
+      PERFORM  ohnesz USING lv_fname CHANGING l_vname.
+      CONCATENATE l_nname(10) l_vname(2) INTO lv_username.
+      TRANSLATE lv_username TO UPPER CASE.
+      READ TABLE itab_bname INTO str_bname WITH KEY bname = lv_username.
+      IF sy-subrc NE 0.
+*     Der SAP-Username ist noch nicht vergeben
+      ELSE.
+        CLEAR lv_username.
+        DO.
+          CLEAR lv_username.
+          ADD 1 TO l_num.
+* Umlaute: Ä, Ü, Ö und ß umsetzen
+          PERFORM  ohnesz USING lv_lname CHANGING l_nname.
+          PERFORM  ohnesz USING lv_fname CHANGING l_vname.
+          CONCATENATE l_nname(10) l_vname(1) l_num INTO lv_username.
+          TRANSLATE lv_username TO UPPER CASE.
+          READ TABLE itab_bname INTO str_bname WITH KEY bname = lv_username.
+          IF sy-subrc NE 0.
+*     Der SAP-Username ist noch nicht vergeben, ruas aus der Schleife
+            EXIT.
+          ENDIF.
+        ENDDO.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+  TRANSLATE lv_username TO UPPER CASE.
+ENDFORM.
+
+
+
+
+*&---------------------------------------------------------------------*
+*& Form create
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM setdata .
+
+  " Set E-Mail
+  lv_email = |{ lv_fname }.{ lv_lname }@winkler.de|.
+  TRANSLATE lv_email TO LOWER CASE.
+
+
+  " Set user_initial_password
+  ls_user_password-bapipwd = 'Winkler123!'.
+
+
+  " Set user_adress data
+  ls_user_adress-firstname = lv_fname.
+  ls_user_adress-lastname = lv_lname.
+  ls_user_adress-e_mail =  lv_email.
+  ls_user_adress-title_p = lv_title.
+  "ls_user_adress-tel1_numbr = '0711-85999'.
+  "ls_user_adress-fax_number = '0711-85999'.
+
+ENDFORM.
+
+
+FORM usercreate.
+
+  " Rollen/Gruppen des zweiten Benutzers abrufen
+  CLEAR lt_old_activity_groups.
+  CALL FUNCTION 'BAPI_USER_GET_DETAIL'
+    EXPORTING
+      username       = lv_user1
+    IMPORTING
+      logondata      = ls_user_logondata
+      defaults       = ls_user_defaults
+      uclass         = ls_user_uclass
+    TABLES
+      parameter      = lt_user_parameter
+      activitygroups = lt_old_activity_groups
+      groups         = lt_user_groups
+      return         = lt_return.
+
+  " Aktuelle Rollen/Gruppen des ersten Benutzers sichern
+  APPEND LINES OF lt_old_activity_groups TO lt_new_activity_groups.
+
+  " Set user_logondata data
+  ls_user_logondata-gltgv = sy-datum.
+  ls_user_logondata-ustyp = 'A'.
+  ls_user_logondata-tzone = 'CET'.
+  ls_user_logondata-gltgb = '20501231'.
+
+  " call BAPI User erstellen
+  CALL FUNCTION 'BAPI_USER_CREATE1'
+    EXPORTING
+      username  = lv_username
+      logondata = ls_user_logondata
+      password  = ls_user_password
+      address   = ls_user_adress
+      defaults  = ls_user_defaults
+      uclass    = ls_user_uclass
+    TABLES
+      parameter = lt_user_parameter
+      groups    = lt_user_groups
+      return    = lt_return.
+
+  target = lv_username.
+  TRANSLATE target TO UPPER CASE.
+
+  DATA: lv_today TYPE sy-datum.
+
+" Aktuelles Datum im Format YYYYMMDD speichern
+lv_today = sy-datum.
+
+  " Rollen/Gruppen des zweiten Benutzers auf den ersten Benutzer kopieren
+  LOOP AT lt_old_activity_groups INTO ls_bapiagr.
+    CLEAR ls_bapiagr-agr_name.
+    CLEAR ls_bapiagr-from_dat.
+    ls_bapiagr-agr_name = ls_bapiagr-agr_name.
+    ls_bapiagr-from_dat = sy-datum. "lv_today.
+    APPEND ls_bapiagr TO lt_new_activity_groups.
+  ENDLOOP.
+
+
+
+  " Rollen/Gruppen dem ersten Benutzer zuweisen
+  CALL FUNCTION 'BAPI_USER_ACTGROUPS_ASSIGN'
+    EXPORTING
+      username       = lv_username
+    TABLES
+      activitygroups = lt_new_activity_groups
+      return         = lt_return.
+
+ENDFORM.
+
+
+
+
+
+
+
+FORM favoriten.
+
+  SELECT SINGLE * FROM zreport_run INTO ls_zreport_run WHERE programm = sy-repid. "#EC CI_NOORDER
+  IF sy-subrc = 0.
+    MOVE: sy-uname TO ls_zreport_run-bname,
+          sy-datum TO ls_zreport_run-last_datum.
+    IF ls_zreport_run-zcount < 99999 ##NUMBER_OK.
+      ADD 1 TO ls_zreport_run-zcount.
+    ENDIF.
+  ELSE.
+    MOVE: sy-repid TO ls_zreport_run-programm,
+          sy-datum TO ls_zreport_run-first_datum,
+          sy-uname TO ls_zreport_run-bname,
+          sy-datum TO ls_zreport_run-last_datum.
+    IF ls_zreport_run-zcount < 99999 ##NUMBER_OK.
+      ADD 1 TO ls_zreport_run-zcount.
+    ENDIF.
+  ENDIF.
+  MODIFY zreport_run FROM ls_zreport_run.
+*----------------------------------------------------------------
+  AUTHORITY-CHECK OBJECT 'S_ADMI_FCD'
+           ID 'S_ADMI_FCD' FIELD 'PADM'.
+  IF sy-subrc NE 0.
+    WRITE: / 'Fehlende Berechtigung für diese Funktion'.
+    EXIT.
+  ENDIF.
+
+  SELECT SINGLE * FROM usr02 CLIENT SPECIFIED
+  WHERE mandt EQ mdtsrc AND bname EQ lv_user1.
+  IF sy-subrc NE 0.
+    WRITE : / 'Benutzer', lv_user1 ,'in Mandant', mdtsrc ,
+    'nicht vorhanden' .
+    EXIT.
+  ENDIF.
+  SELECT SINGLE * FROM usr02 CLIENT SPECIFIED
+  WHERE mandt EQ mdttrg AND bname EQ target.
+  IF sy-subrc NE 0.
+    WRITE : / 'Benutzer', target ,'in Mandant', mdttrg ,
+    'nicht vorhanden' .
+    EXIT.
+  ENDIF.
+
+  DELETE FROM smen_buffc CLIENT SPECIFIED
+    WHERE mandt EQ  mdttrg AND uname EQ target.
+  DELETE FROM smen_buffi CLIENT SPECIFIED
+     WHERE mandt EQ  mdttrg AND uname EQ target.
+  DELETE FROM smenfavdat CLIENT SPECIFIED
+     WHERE mandt EQ mdttrg AND uname EQ target.
+
+
+  SELECT * FROM smen_buffc CLIENT SPECIFIED
+    WHERE mandt EQ mdtsrc AND uname EQ lv_user1.
+    smen_buffc-mandt = mdttrg.
+    smen_buffc-uname = target.
+    INSERT smen_buffc CLIENT SPECIFIED.
+  ENDSELECT.
+
+  SELECT * FROM smen_buffi CLIENT SPECIFIED
+    WHERE mandt EQ mdtsrc AND uname EQ lv_user1.
+    smen_buffi-mandt = mdttrg.
+    smen_buffi-uname = target.
+    INSERT smen_buffi CLIENT SPECIFIED.
+  ENDSELECT.
+
+*----------------------------------------------------------------
+  SELECT * FROM smenfavdat CLIENT SPECIFIED
+    WHERE mandt EQ mdtsrc AND uname EQ lv_user1.
+    smenfavdat-mandt = mdttrg.
+    smenfavdat-uname = target.
+    INSERT smenfavdat CLIENT SPECIFIED.
+  ENDSELECT.
+
+ENDFORM.
+
+
+
+FORM ohnesz USING in CHANGING out.
+  DATA: z_erg(12).
+  DATA  z_in(12).
+  z_in = in.
+  TRANSLATE z_in TO UPPER CASE.
+  DO 12 TIMES.
+    IF z_in(1) = 'Ä'.
+      CONCATENATE z_erg 'AE' INTO z_erg.
+    ELSEIF z_in(1) = 'Ö'.
+      CONCATENATE z_erg 'OE' INTO z_erg.
+    ELSEIF z_in(1) = 'Ü'.
+      CONCATENATE z_erg 'UE' INTO z_erg.
+    ELSEIF z_in(1) = 'ß'.
+      CONCATENATE z_erg 'SS' INTO z_erg.
+    ELSE.
+      CONCATENATE z_erg z_in(1) INTO z_erg.
+    ENDIF.
+    SHIFT z_in LEFT.
+  ENDDO.
+  out = z_erg.
+ENDFORM.
