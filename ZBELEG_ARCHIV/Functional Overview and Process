@@ -1,3 +1,19 @@
+Ablauf und Funktionsweise
+	1. Eingabeparameter und Objektaufbau
+Über den SELECTION-SCREEN müssen die drei Parameter eingegeben werden. Im AT SELECTION-SCREEN wird anschließend die Formroutine execute_gos_service aufgerufen.
+Dort wird zunächst eine BORIDENT-Struktur (ls_object) aufgebaut, in der der Objekttyp fest auf 'BKPF' gesetzt wird (das ist der Belegkopf eines FI-Dokuments). Anschließend wird der Objektschlüssel zusammengesetzt, indem Buchungskreis, Belegnummer und Geschäftsjahr per CONCATENATE aneinandergehängt werden.
+	2. Konfiguration des GOS-Services
+Für den Aufruf des GOS-Services werden folgende Parameter definiert:
+		○ lv_service wird auf 'VIEW_ATTA' gesetzt, was den GOS-Service darstellt, der Anhänge anzeigen soll.
+		○ lv_no_commit wird auf 'X' gesetzt, um zu verhindern, dass beim Serviceaufruf automatisch ein Commit in der Datenbank erfolgt.
+		○ lv_popup wird auf 'X' gesetzt, damit ein Popup-Fenster zur Anzeige der Anhänge erscheint.
+		○ lv_rwmod wird auf 'E' gesetzt, was vermutlich den Lese-/Schreibmodus (hier: nur Lesen bzw. Einsehen) definiert.
+	3. Ausführung des GOS-Service
+Mit dem Funktionsbaustein GOS_EXECUTE_SERVICE werden dann der gewünschte Service und die Objektinformationen an das GOS übergeben.
+Wird bei diesem Aufruf ein Fehler festgestellt (d. h. sy-subrc ist ungleich 0), so wird eine Fehlermeldung „Fehler beim Anzeigen der Archiv-Anhänge“ vom Typ „E“ (Error) ausgegeben.
+
+
+
 Mehrere belege aus dem archiv auswählen - im g laufwerk speichern oder in pdf umwandlen und dann als email versenden 
 
 
