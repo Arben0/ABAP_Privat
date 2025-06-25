@@ -1,1 +1,62 @@
+Mehrere belege aus dem archiv auswählen - im g laufwerk speichern oder in pdf umwandlen und dann als email versenden 
+
+
+S4e beleg: 
+Bukr      belegnr                jahr       art         belegdatum        bucdat                 erfaßt am
+0002	5000933248	2022	WI	15.10.2022	15.10.2022	13:18:10
+0006	5007239682	2022	WI	21.10.2022	21.10.2022	12:03:57
+0012	1000060262	2024	KZ	09.10.2024	09.10.2024	15:38:18
+0025	1000006878	2023	KZ	08.02.2023	08.02.2023	15:57:08
+0025	1000006879	2023	KZ	08.02.2023	08.02.2023	16:02:21
+0025	1000006880	2023	KZ	08.02.2023	08.02.2023	17:37:49
+
+
+Funktionsbaustein: gos_execute_service   wird anhangliste aufgerufen
+ip_service:   view_atta
+is_object: objkey: buchkrs+belegnr+jahr
+                   objtype: BKPF
+ip_no_commit: X
+Ip_popup: X
+
+
+
+Table: SRGBTBREL
+
+In dem Feld „Instanzidentifikator “ [techn. (INSTID_A)] ist der Buchungskreis, Belegnummer und das Geschäftsjahr aus dem FI-Beleg als verkettete Textfelder gespeichert.
+Im zweiten Feld „Instanzidentifikator“ [techn. (INSTID_B)] ist folgendes gespeichert:
+ EXT: Dokumenttyp
+ 43: Objektjahr
+ 000000000033: Objektnummer
+Diese genannten verketteten Felder dienen als Verknüpfungsschlüssel in der Tabelle SOOD
+
+
+
+
+
+
+====================================================================================
+
+So sieht ein beleg aus
+70000902
+0050
+2024
+
+
+
+bild:
+objektkateorie: BO BOR-Objekttyp
+objekttyp: BKPF
+objektschlüssel: 005000700009022024
+
+
+
+
+
+
+
+Tabelle toa01
+TYP: BKPF
+IDENT: 005000700009022024
+
+werden alle anlage angezeigt
 
