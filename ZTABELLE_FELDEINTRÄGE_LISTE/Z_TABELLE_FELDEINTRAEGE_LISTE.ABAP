@@ -1,3 +1,21 @@
+*&---------------------------------------------------------------------*
+*& Report Z_TABELLE_FELDEINTRAEGE_LISTE
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Ticket     : Ticketnummer
+*& Ersteller  : Arben Hajruli
+*& Anforderer : Steinbach Katrin
+*& Datum      : 13.01.2025
+*& Kommentar  : Tabellenname eingeben und Liste von Felder mit Anzahl
+*&              der einträgen wird ausgegeben.
+*&
+*&
+*&---------------------------------------------------------------------*
+*& Änderungen: Hier Anpassungen folgendermaßen eingeben
+*&             #Ticketnr/Name/Datum - Kurzbeschreibung
+*&
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
 Report Z_TABELLE_FELDEINTRAEGE_LISTE.
 
 "Ausgabe mit ALV Tabelle
