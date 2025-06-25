@@ -1,1 +1,27 @@
-
+Aufbau und Ablauf
+	1. Definition der Ausgabestruktur
+		○ Struktur ty_output: Enthält zwei Felder:
+			§ field: Name des ABAP-Feldes
+			§ count: Anzahl der nicht-leeren Einträge (als String)
+	2. Dynamische Tabellenerstellung und Datenbeschickung
+		○ Eingabeparameter: p_eingab (Typ: tabname, obligatorisch) – hier gibst Du den Namen der Tabelle an, die ausgewertet werden soll.
+		○ Erstellung der dynamischen Tabelle: Mittels CREATE DATA lt_dynamic_table TYPE TABLE OF (p_eingab) wird eine Tabelle basierend auf dem eingegebenen Namen erzeugt. Ein TRY-CATCH-Block fängt Fehler ab, falls der Tabellenname ungültig ist.
+		○ Zuordnung mittels Field-Symbol: Mit ASSIGN lt_dynamic_table->* TO <fs_table> wird das dynamisch erstellte Datenobjekt einem Field-Symbol <fs_table> zugewiesen.
+		○ Datenbeschickung: Durch das Statement SELECT * FROM (p_eingab) INTO TABLE <fs_table> werden alle Einträge der angegebenen Tabelle in die dynamische Tabelle geladen.
+		○ Prüfung auf leere Tabelle: Falls keine Datensätze vorhanden sind (<fs_table> IS INITIAL), wird eine Fehlermeldung ausgegeben und die Verarbeitung abgebrochen.
+	3. Auswertung der Felder
+		○ Iterieren über die Felder: Ein DO-Loop iteriert über alle Komponenten (Felder) der Struktur der ersten Zeile der dynamischen Tabelle. Mit ASSIGN COMPONENT sy-index OF STRUCTURE <fs_table>[ 1 ] TO <fs_field> wird jeweils ein Feld zugeordnet.
+		○ Zählen der Einträge pro Feld: Für jedes Feld wird:
+			§ Die Zählvariable lv_count initialisiert.
+			§ Ein LOOP über alle Zeilen der Tabelle (LOOP AT <fs_table> ASSIGNING <fs_structure>) durchgeführt.
+			§ In jeder Zeile wird das entsprechende Feld (über ASSIGN COMPONENT sy-index OF STRUCTURE <fs_structure> TO <fs_field>) überprüft. Ist das Feld nicht leer, wird lv_count um 1 erhöht.
+		○ Ermittlung des Feldnamens: Der Name des aktuellen Feldes wird über die Methode cl_abap_typedescr=>describe_by_data( <fs_field> )->get_relative_name( ) ermittelt.
+		○ Erstellen des Ergebnisstrings: Der Feldname und die gezählte Anzahl werden in einen String im Format Feldname: Anzahl umgewandelt und in die interne Tabelle lt_counts aufgenommen.
+	4. Aufbereitung der ALV-Ausgabe
+		○ Formatierung der Ergebnisse: In einem weiteren LOOP wird jeder String aus lt_counts gesplittet, sodass der Feldname und der Zähler separat in die Struktur ty_output übernommen werden. Diese Ergebnisse werden in der internen Tabelle lt_output gespeichert.
+		○ Erzeugen des ALV-Reports:
+			§ Über cl_salv_table=>factory wird ein ALV-Objekt erstellt und lt_output als Datenquelle zugewiesen.
+			§ Mit get_functions, get_columns und get_display_settings werden die Funktionstasten, Spaltenbreiten (automatische Optimierung) und Anzeigeeinstellungen (Listenheader, Streifenmuster) konfiguriert.
+			§ Abschließend wird der ALV-Report mit go_alv->display( ) angezeigt.
+	5. Alternative Listen-Ausgabe (auskommentiert) 
+    ○ Im Code befindet sich ein auskommentierter Abschnitt, der anstelle der ALV-Ausgabe eine einfache Listenanzeige mittels WRITE realisiert. Damit kannst Du die Ausgabe auch ohne ALV darstellen, falls gewünscht.
