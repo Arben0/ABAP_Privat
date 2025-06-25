@@ -1,9 +1,7 @@
 Hauptfunktionen und Abläufe
 	1. Dateiauswahl und -prüfung
-		○ Dateiauswahl:
-Über die Form at_selection_screen_val_file wird ein Dialog geöffnet, der es dem Benutzer erlaubt, eine CSV-Datei auszuwählen (Standarderweiterung: *.CSV).
-		○ Dateiexistenz prüfen:
-Mit der Form check_file_exists wird verifiziert, ob die ausgewählte Datei tatsächlich existiert. Falls nicht, wird eine entsprechende Fehlermeldung ausgegeben und die Verarbeitung abgebrochen.
+		○ Dateiauswahl: Über die Form at_selection_screen_val_file wird ein Dialog geöffnet, der es dem Benutzer erlaubt, eine CSV-Datei auszuwählen (Standarderweiterung: *.CSV).
+		○ Dateiexistenz prüfen: Mit der Form check_file_exists wird verifiziert, ob die ausgewählte Datei tatsächlich existiert. Falls nicht, wird eine entsprechende Fehlermeldung ausgegeben und die Verarbeitung abgebrochen.
 	2. CSV-Datei einlesen und verarbeiten
 		○ Die CSV-Datei wird mittels cl_gui_frontend_services=>gui_upload eingelesen.
 		○ Ab der zweiten Zeile (wobei die Kopfzeile übersprungen wird) wird jede Zeile durch den Funktionsbaustein RSDS_CONVERT_CSV in ihre Einzelspalten zerlegt.
