@@ -1,1 +1,22 @@
-
+Ablauf und Funktionsweise
+	1. Selektion der Benutzernamen
+		○ Selection-Screen: Über SELECT-OPTIONS kann der Benutzer mehrere Benutzernamen eingeben. Diese werden in der internen Tabelle so_user gespeichert.
+		○ Eingabeprüfung: Zu Beginn der Ausführung (START-OF-SELECTION) wird überprüft, ob mindestens ein Benutzername eingegeben wurde. Falls nicht, wird eine Fehlermeldung ausgegeben und das Programm beendet.
+	2. Initialisierung der Lizenzdaten
+		○ Strukturen: Zwei Strukturen werden verwendet:
+			§ ls_user_uclass für die eigentlichen Lizenzdaten
+			§ ls_user_uclassx für die Änderungsindikatoren
+		○ Wertezuweisung:
+			§ ls_user_uclass-lic_type wird auf '53' gesetzt.
+			§ ls_user_uclass-country_surcharge wird auf '0' gesetzt.
+			§ In ls_user_uclassx wird das Feld uclass mit 'X' markiert, um anzuzeigen, dass die Benutzerklassifikation geändert werden soll.
+	3. Verarbeitung der einzelnen Benutzernamen
+		○ Das Programm durchläuft mittels einer LOOP-Anweisung alle Einträge in der Selektionsoption so_user.
+		○ Für jeden Datensatz wird der tatsächliche Benutzername aus dem Feld low extrahiert und in der Variable lv_username gespeichert.
+		○ Vor jedem BAPI-Aufruf wird die Rückgabewertetabelle lt_return geleert, um sicherzustellen, dass nur die aktuellen Rückmeldungen verarbeitet werden.
+	4. BAPI-Aufruf und Änderungsprozess
+		○ BAPI_USER_CHANGE: Für jeden Benutzer wird der BAPI BAPI_USER_CHANGE aufgerufen, wobei der Benutzername sowie die vorbereiteten Lizenzdaten (und deren Änderungsindikatoren) übergeben werden.
+		○ Ausgabe der Rückmeldungen: Anschließend wird die Tabelle lt_return durchlaufen und die Rückmeldungsnachrichten (z. B. Erfolgsmeldungen oder Fehlermeldungen) werden mit WRITE ausgegeben. 
+    (Hinweis: Der Kommentar in der WRITE-Anweisung deutet auf eine Ausgabe der Meldungen in Verbindung mit dem Benutzernamen hin.)
+		○ Commit der Transaktion: Nach jedem Benutzer wird mit BAPI_TRANSACTION_COMMIT die Transaktion abgeschlossen, um sicherzustellen, dass die Änderungen im System dauerhaft übernommen werden.
+	5. Abschlussmeldung Nach der Verarbeitung aller ausgewählten Benutzernamen gibt das Programm abschließend eine Meldung aus, dass die Lizenzdaten für alle ausgewählten Benutzer aktualisiert wurden.
