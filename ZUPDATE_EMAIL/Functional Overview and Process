@@ -1,1 +1,36 @@
+Hauptfunktionen und Abläufe
+	1. Dateiauswahl und -prüfung
+		○ Dateiauswahl:
+Über die Form at_selection_screen_val_file wird ein Dialog geöffnet, der es dem Benutzer erlaubt, eine CSV-Datei auszuwählen (Standarderweiterung: *.CSV).
+		○ Dateiexistenz prüfen:
+Mit der Form check_file_exists wird verifiziert, ob die ausgewählte Datei tatsächlich existiert. Falls nicht, wird eine entsprechende Fehlermeldung ausgegeben und die Verarbeitung abgebrochen.
+	2. CSV-Datei einlesen und verarbeiten
+		○ Die CSV-Datei wird mittels cl_gui_frontend_services=>gui_upload eingelesen.
+		○ Ab der zweiten Zeile (wobei die Kopfzeile übersprungen wird) wird jede Zeile durch den Funktionsbaustein RSDS_CONVERT_CSV in ihre Einzelspalten zerlegt.
+		○ Wichtige Spalten sind:
+			§ Spalte 1: Alte E-Mail-Adresse
+			§ Spalte 2: (Neue E-Mail – wird als Parameter ausgelesen, aber letztlich wird die E-Mail anhand von Vor- und Nachname neu erstellt)
+			§ Spalte 5: Vorname
+			§ Spalte 6: Nachname
+			§ Spalte 7: Benutzername
+	3. Überprüfung und Normalisierung
+		○ Es wird geprüft, ob die alte E-Mail-Adresse die Domains @winkler.de oder @winkler-parts.ch enthält.
+		○ Für die betroffenen Zeilen werden der Benutzername, Vorname und Nachname extrahiert.
+		○ Mit der Form normalize_string werden Vor- und Nachname normalisiert. Dabei werden Umlaute (z. B. ä → ae, ß → ss) und unerwünschte Sonderzeichen ersetzt, um ein sauberes Format zu gewährleisten.
+	4. Benutzeraktualisierung
+		○ Über die Form update_user_details werden für jeden Benutzer die aktuellen Details via BAPI_USER_GET_DETAIL abgerufen.
+		○ Es wird eine erwartete E-Mail-Adresse im Format vorname.nachname@winkler.com (in Kleinbuchstaben) erstellt.
+		○ Ist die aktuell hinterlegte E-Mail-Adresse nicht bereits im erwarteten Format, wird diese mit BAPI_USER_CHANGE aktualisiert und der Änderungsvorgang mit BAPI_TRANSACTION_COMMIT abgeschlossen.
+		○ Rückmeldungen, ob die Aktualisierung erfolgreich war oder ob Fehler auftraten, werden in einer Ausgabetabelle (gt_ausgabe_tabelle) gespeichert.
+	5. Sortierung und Ausgabe der Ergebnisse
+		○ Mit der Form sort_ausgabe_tabelle wird die Ausgabetabelle anhand der Meldungstypen (z. B. erfolgreiche Aktualisierung, bereits aktuelle E-Mail, Fehler) sortiert.
+		○ Die sortierten Ergebnisse werden anschließend in einem ALV-Grid (mittels cl_salv_table in der Form display_alv) angezeigt. Dabei werden Spaltenbeschriftungen und Anzeigeeinstellungen (wie etwa optimierte Spaltenbreiten und Kopfzeilen) angepasst.
+
+Zusammenfassung
+Das Programm Z_UPDATE_EMAIL automatisiert die Aktualisierung von Benutzer-E-Mail-Adressen anhand von CSV-Daten. Es kombiniert dabei:
+	• Eine benutzerfreundliche Dateiauswahl und -prüfung,
+	• Eine robuste CSV-Verarbeitung,
+	• Die Normalisierung von Namen (um Sonderzeichen und Umlaute korrekt zu behandeln) und
+	• Die Aktualisierung von Benutzerdaten über BAPI-Funktionen.
+Alle Ergebnisse und Fehlermeldungen werden abschließend in einem übersichtlichen ALV-Grid dargestellt.
 
