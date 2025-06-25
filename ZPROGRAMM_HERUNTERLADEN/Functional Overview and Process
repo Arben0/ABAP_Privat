@@ -1,1 +1,46 @@
+1. Zweck und Einsatzgebiet
+Das Programm stellt ein umfassendes Download- und Konvertierungstool dar – oft auch als „Mass Download“ oder „Direct Download Enterprise“ bezeichnet. 
+Es dient dazu, verschiedene Repository-Objekte aus dem SAP-System (wie Tabellen, Table Types, Message Classes, Funktionsbausteine, XSLT-Transformationen, Klassen und Programme inkl. deren Includes) auszulesen, 
+in ein vorgegebenes Format (z. B. HTML oder reinen Text) umzuwandeln und auf den PC bzw. auf den SAP-Server zu speichern. Zusätzlich wird eine Baumdarstellung der heruntergeladenen Objekte erstellt, 
+um einen schnellen Überblick zu ermöglichen.
+
+2. Aufbau und Struktur
+Das Programm gliedert sich in mehrere große Bereiche:
+	• Definitionen und globale Daten:
+		○ Zunächst werden SAP-Tabellen und TYPE-POOLS deklariert.
+		○ Anschließend werden zahlreiche eigene Typdefinitionen (z. B. für Text-Elemente, Nachrichten, Bildschirmflüsse, Dictionary-Strukturen, Tabellenarten, Klassen, Funktionen, Programme etc.) angelegt.
+		○ Es folgen globale DATA-Deklarationen für interne Tabellen, globale Objekte und Konstanten.
+	• Selektion und Parameter:
+		○ Der SELECTION-SCREEN wird in mehrere Blöcke (z. B. „b1“ bis „b5“) unterteilt, in denen der Benutzer Kriterien zur Auswahl der herunterzuladenden Objekte (wie Autor, Objektname, Package, Sprache, kundenspezifische Objekte etc.) sowie Download-Optionen (z. B. Downloadziel, Dateityp, Ordnerpfade) eingeben kann.
+		○ Zusätzliche Events (wie VALUE-REQUEST und AT SELECTION-SCREEN) sorgen für dynamische Hilfestellungen (z. B. Verzeichnisauswahl, F4-Hilfe) und Validierungen der Eingaben.
+	• Hauptprogrammablauf (START-OF-SELECTION):
+		○ Nach der Auswahl werden diverse PERFORM-Aufrufe gestartet, die den Downloadprozess in Gang setzen.
+	• Unterprogramme / Subroutinen (FORMs):
+Das Programm ist modular in viele Form-Routinen unterteilt, die unterschiedliche Aufgaben übernehmen. Beispiele:
+		○ Datenabruf und –verarbeitung:
+– retrievetables, retrievetabletypes, retrievefunctions, retrieveprograms, retrieveclasses etc.
+– Hier werden die Objektinformationen (z. B. Definitionen, Quelltexte, Metadaten) aus den SAP-Datenbanktabellen oder dem Repository ermittelt.
+		○ Spezielle Such- und Scan-Routinen:
+– Zum Beispiel scanforadditionalfuncstuff, scanforincludeprograms, scanforlikeortype oder findmainfunctioninclude.
+– Diese Routinen durchsuchen Quellcodezeilen oder Metadaten nach Verweisen auf weitere Objekte (z. B. Aufrufe, Includes, Referenzen).
+		○ Download- und Dateimanagement:
+– Routinen wie buildfilename, savefiletopc und savefiletoserver erstellen Dateinamen, schreiben den heruntergeladenen Inhalt (häufig in einem internen String-Table) in Dateien und kümmern sich um die unterschiedlichen Betriebssystemanforderungen.
+– Es wird auch geprüft, ob externe Befehle (z. B. ein Verzeichnis-Erstellungsbefehl) vorhanden sind, und es werden Verzeichnisse auf dem Server angelegt.
+		○ HTML-Konvertierungsroutinen:
+– Mit convertddtohtml, convertcodetohtml, convertclasstohtml und convertfunctiontohtml wird der abgerufene Quelltext in ein HTML-Dokument umgewandelt.
+– Dazu gehören auch Routinen zum Aufbau von HTML-Headern, CSS-Styles (wie addcodestyles, addtablestyles, addgenericstyles) und HTML-Footern.
+		○ Baumdarstellung und Anzeige:
+– Mithilfe von Funktionen wie filltreenodetables, filltreenodefunctions, filltreenodeprograms und displaytree wird eine hierarchische Struktur (Tree) der heruntergeladenen Objekte aufgebaut und anschließend angezeigt.
+
+3. Hauptfunktionen im Detail
+	• Objektauswahl und Filterung:
+Der Benutzer kann über den SELECTION-SCREEN genau festlegen, welche Objekte (z. B. nur kundenspezifische Tabellen oder alle Funktionsbausteine eines bestimmten Autors) heruntergeladen werden sollen.
+	• Datenabruf:
+Die entsprechenden Objekte werden – je nach Typ – aus den SAP-Datenbanktabellen (z. B. DD02L, DD40L, T100, etc.) oder dem Repository (z. B. TRDIR, TADIR) abgerufen.
+	• Konvertierung und HTML-Formatierung:
+Mit den diversen Konvertierungsroutinen wird der abgerufene Quellcode oder die Objektdefinitionen in ein ansprechendes HTML-Format überführt. Dabei werden z. B. Sonderzeichen ersetzt, Stylesheets eingebunden und Hyperlinks zu verknüpften Objekten erzeugt.
+	• Download:
+Je nach Einstellung wird der generierte Output (HTML oder Text) entweder über CL_GUI_FRONTEND_SERVICES=>GUI_DOWNLOAD direkt auf den lokalen PC oder über Dateioperationen (OPEN DATASET etc.) auf den SAP-Server geschrieben. Dabei werden auch Pfade und Dateinamen dynamisch erstellt.
+	• Baumdarstellung:
+Mithilfe von SAP-Standardfunktionen (z. B. RS_TREE_CONSTRUCT, RS_TREE_EXPAND und RS_TREE_LIST_DISPLAY) wird eine visuelle Übersicht (Tree) der heruntergeladenen Objekte erzeugt, in der auch Hierarchien (z. B. zwischen Klassen, ihren Methoden und referenzierten Objekten) dargestellt werden.
 
